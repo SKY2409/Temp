@@ -1,0 +1,128 @@
+using System;
+using Xunit;
+using Moq;
+using System.Collections.Generic;
+using ToDoApp.Core.Models;      // Or wherever ToDoItem is located
+using ToDoApp.Core.Repositories; // Or wherever IToDoRepository is located
+using ToDoApp.Core.Services;     // Or wherever TodoService is located
+using ToDoApp.Core.Exceptions;   // Or wherever SymbolNotAllowedException is located
+
+namespace ToDoApp.Tests
+{
+    public class TodoServiceTests
+    {
+        /// <summary>
+        /// 1) Verify that creating an item with disallowed symbols throws a SymbolNotAllowedException.
+        /// </summary>
+        [Fact]
+        public void CreateItem_WithSymbol_ThrowsSymbolNotAllowedException()
+        {
+            // Arrange
+            var mockRepo = new Mock<IToDoRepository>();
+            var service = new TodoService(mockRepo.Object);
+
+            var itemWithSymbol = new ToDoItem { Title = "Hello @World" };
+
+            // Act & Assert
+            Assert.Throws<SymbolNotAllowedException>(() => service.CreateItem(itemWithSymbol));
+            
+            // No repository calls should occur if we throw early
+            mockRepo.Verify(repo => repo.Add(It.IsAny<ToDoItem>()), Times.Never);
+        }
+
+        /// <summary>
+        /// 2) Verify that creating an item with a valid title saves data to the repository.
+        /// </summary>
+        [Fact]
+        public void CreateItem_ValidTitle_PersistsData()
+        {
+            // Arrange
+            var mockRepo = new Mock<IToDoRepository>();
+            var service = new TodoService(mockRepo.Object);
+            var newItem = new ToDoItem { Title = "Buy groceries", SortOrder = 1 };
+
+            // Setup mock to return the same item with an assigned Id
+            mockRepo.Setup(r => r.Add(It.IsAny<ToDoItem>()))
+                    .Returns<ToDoItem>(item =>
+                    {
+                        item.Id = 101;
+                        return item;
+                    });
+
+            // Act
+            var created = service.CreateItem(newItem);
+
+            // Assert
+            mockRepo.Verify(repo => repo.Add(It.IsAny<ToDoItem>()), Times.Once);
+            Assert.Equal(101, created.Id);  // The mock assigned this ID
+            Assert.Equal("Buy groceries", created.Title);
+        }
+
+        /// <summary>
+        /// 3) Verify that marking an existing item as done updates IsDone in the repository.
+        /// </summary>
+        [Fact]
+        public void MarkDone_UpdatesIsDone()
+        {
+            // Arrange
+            var mockRepo = new Mock<IToDoRepository>();
+            var service = new TodoService(mockRepo.Object);
+
+            var existing = new ToDoItem { Id = 5, Title = "Study xUnit", IsDone = false };
+            mockRepo.Setup(r => r.GetById(5)).Returns(existing);
+
+            // Act
+            var updatedItem = service.MarkDone(5);
+
+            // Assert
+            Assert.NotNull(updatedItem);
+            Assert.True(updatedItem!.IsDone);
+
+            mockRepo.Verify(r => r.Update(It.Is<ToDoItem>(i => i.IsDone == true)), Times.Once);
+        }
+
+        /// <summary>
+        /// 4) Verify that reordering an existing item updates its SortOrder.
+        /// </summary>
+        [Fact]
+        public void ReorderItem_UpdatesSortOrder()
+        {
+            // Arrange
+            var mockRepo = new Mock<IToDoRepository>();
+            var service = new TodoService(mockRepo.Object);
+
+            var existing = new ToDoItem { Id = 10, Title = "Exercise", IsDone = false, SortOrder = 2 };
+            mockRepo.Setup(r => r.GetById(10)).Returns(existing);
+
+            // Act
+            var success = service.ReorderItem(10, 5);
+
+            // Assert
+            Assert.True(success);
+            mockRepo.Verify(r => r.Update(It.Is<ToDoItem>(i => i.Id == 10 && i.SortOrder == 5)), Times.Once);
+        }
+
+        /// <summary>
+        /// 5) Verify that reordering a non-existent item returns false.
+        /// </summary>
+        [Fact]
+        public void ReorderItem_ItemNotFound_ReturnsFalse()
+        {
+            // Arrange
+            var mockRepo = new Mock<IToDoRepository>();
+            var service = new TodoService(mockRepo.Object);
+
+            // Item with ID 999 does not exist, so repository returns null
+            mockRepo.Setup(r => r.GetById(999)).Returns<ToDoItem?>(null);
+
+            // Act
+            var success = service.ReorderItem(999, 3);
+
+            // Assert
+            Assert.False(success);
+
+            // Also verify no update is called
+            mockRepo.Verify(r => r.Update(It.IsAny<ToDoItem>()), Times.Never);
+        }
+    }
+}
