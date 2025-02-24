@@ -1,0 +1,78 @@
+﻿@page "/todolist"
+@inject ToDoServices toDoServices
+@using ToDoApp.Client.Services
+@using ToDoApp.Client.Models
+
+
+<h3>To-Do List</h3>
+
+@if (items == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="table-responsive">
+
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Done?</th>
+                <th>Sort Order</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in items)
+            {
+                <tr>
+                    <td>@item.Title</td>
+                    <td>@(item.IsDone ? "Yes" : "No")</td>
+                    <td>@item.SortOrder</td>
+                    <td>
+                        <button class="btn btn-success" @onclick="() => MarkDone(item)">Mark Done</button>
+                        <button class="btn btn-danger" @onclick="() => DeleteItem(item.Id)">Delete</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+    </div>
+}
+
+@code {
+    private List<ToDoItem>? items;
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Load all to-do items
+        items = await toDoServices.GetAllAsync();
+    }
+
+    private async Task MarkDone(ToDoItem item)
+    {
+        // Mark the item as done
+        item.IsDone = true;
+        bool success = await toDoServices.UpdateAsync(item);
+        if (success)
+        {
+            // Refresh the table or just re-render
+            StateHasChanged();
+        }
+    }
+
+    private async Task DeleteItem(int id)
+    {
+        bool success = await toDoServices.DeleteAsync(id);
+        if (success && items != null)
+        {
+            var itemToRemove = items.FirstOrDefault(i => i.Id == id);
+            if (itemToRemove != null)
+            {
+                items.Remove(itemToRemove);
+                StateHasChanged();
+            }
+        }
+    }
+}

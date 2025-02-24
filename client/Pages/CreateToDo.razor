@@ -1,0 +1,45 @@
+﻿@page "/createtodo"
+@inject ToDoServices toDoServices
+@using ToDoApp.Client.Models
+@using ToDoApp.Client.Services
+
+<h3>Create a New ToDo</h3>
+
+<EditForm Model="@newItem" OnValidSubmit="@HandleValidSubmit">
+    <div class="mb-3">
+        <label class="form-label">Title</label>
+        <InputText class="form-control" @bind-Value="newItem.Title" />
+    </div>
+
+    <div class="mb-3">
+        <label class="form-label">Sort Order</label>
+        <InputNumber class="form-control" @bind-Value="newItem.SortOrder" />
+    </div>
+
+    <button type="submit" class="btn btn-primary">Create</button>
+</EditForm>
+
+@if (!string.IsNullOrEmpty(successMessage))
+{
+    <div class="alert alert-info mt-3">@successMessage</div>
+}
+
+@code {
+    private ToDoItem newItem = new ToDoItem();
+    private string? successMessage;
+
+    private async Task HandleValidSubmit()
+    {
+        var created = await toDoServices.CreateAsync(newItem);
+        if (created != null)
+        {
+            successMessage = $"Created item with ID {created.Id}";
+            // Reset the form fields
+            newItem = new ToDoItem();
+        }
+        else
+        {
+            successMessage = "Error creating the item. Check console for more info.";
+        }
+    }
+}
