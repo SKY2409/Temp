@@ -1,0 +1,65 @@
+using System.Linq;
+using Xunit;
+using ToDoApp.API.Repositories;
+using ToDoApp.API.Models;
+
+namespace ToDoApp.Tests
+{
+    public class ToDoRepositoryTests
+    {
+        // IMPORTANT: This connection string must point to a test database.
+        // Ensure that the ToDoDb database exists and that you have the necessary permissions.
+        // For Windows Authentication, note the double backslash and include TrustServerCertificate if needed.
+        private const string TestConnectionString =
+            "Server=DESKTOP-LSD22MT\\SQLEXPRESS;Database=ToDoDb;Trusted_Connection=True;TrustServerCertificate=True;";
+
+        [Fact]
+        public void CanAddUpdateDeleteToDoItem()
+        {
+            // Arrange: Create the repository instance.
+            var repo = new ToDoRepository(TestConnectionString);
+
+            // (Optional) Capture the initial count of items to verify later.
+            int initialCount = repo.GetAll().Count();
+
+            // ACT 1: Create a new ToDo item.
+            var newItem = new ToDoItem
+            {
+                Title = "Integration Test Item",
+                SortOrder = 99,
+                IsDone = false
+            };
+
+            var createdItem = repo.Add(newItem);
+
+            // Assert: Ensure that an Id was assigned and the item appears in the list.
+            Assert.True(createdItem.Id > 0, "The item should have a valid Id after creation.");
+            var itemsAfterAdd = repo.GetAll().ToList();
+            Assert.Equal(initialCount + 1, itemsAfterAdd.Count);
+            Assert.Contains(itemsAfterAdd, i => i.Id == createdItem.Id && i.Title == "Integration Test Item");
+
+            // ACT 2: Update the item.
+            createdItem.IsDone = true;
+            createdItem.Title = "Updated Integration Test Item";
+            bool updateResult = repo.Update(createdItem);
+
+            // Assert: Ensure update returned true.
+            Assert.True(updateResult, "Update should return true on success.");
+
+            // Retrieve the item to verify the update.
+            var updatedItem = repo.GetById(createdItem.Id);
+            Assert.NotNull(updatedItem);
+            Assert.True(updatedItem.IsDone, "The item should be marked as done after update.");
+            Assert.Equal("Updated Integration Test Item", updatedItem.Title);
+
+            // ACT 3: Delete the item.
+            bool deleteResult = repo.Delete(createdItem.Id);
+            Assert.True(deleteResult, "Delete should return true on success.");
+
+            // Assert: Verify that the item is no longer in the database.
+            var finalItems = repo.GetAll().ToList();
+            Assert.Equal(initialCount, finalItems.Count);
+            Assert.DoesNotContain(finalItems, i => i.Id == createdItem.Id);
+        }
+    }
+}
