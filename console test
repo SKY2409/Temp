@@ -1,0 +1,50 @@
+using System;
+using System.Data;
+using Microsoft.Data.SqlClient;
+using ToDoApp.API.Repositories;
+// If referencing your repository or models from API, also add:
+// using ToDoApp.API.Repositories;
+// using ToDoApp.API.Models;
+
+namespace DatabaseTester
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            // 1. Define or read your connection string.
+            string connectionString = "Server=DESKTOP-LSD22MT\\SQLEXPRESS;Database=ToDoDB;Trusted_Connection=True;Encrypt=True;TrustServerCertificate=True;";
+
+            // 2. Try to open the connection and run a quick query
+            try
+            {
+                using var conn = new SqlConnection(connectionString);
+                conn.Open();
+
+                Console.WriteLine("SUCCESS: Connected to SQL database!");
+
+                // (Optional) Test a query
+                using var cmd = conn.CreateCommand();
+                cmd.CommandText = "SELECT DB_NAME() as CurrentDB";
+                var result = cmd.ExecuteScalar();
+
+                Console.WriteLine($"Currently connected to: {result}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("ERROR: Could not connect to the database.");
+                Console.WriteLine($"Exception Message: {ex.Message}");
+            }
+
+            // 3. (Optional) If referencing your existing ToDoRepository, you can do something like:
+            
+            var repo = new ToDoRepository(connectionString);
+            var items = repo.GetAll();
+            foreach (var item in items)
+            {
+                Console.WriteLine($"ID: {item.Id}, Title: {item.Title}");
+            }
+            
+        }
+    }
+}
