@@ -15,3 +15,19 @@ WHERE EXISTS (
     SELECT 1 FROM table1 t1
     WHERE REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '')
 );
+
+
+DECLARE
+    vemail VARCHAR2(255);
+BEGIN
+    -- Example variable assignment (you can set this to the value you want to update)
+    vemail := 'newemail@example.com';
+    
+    UPDATE table1 t1
+    SET t1.email = vemail
+    WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(
+        (SELECT email FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') AND
+        SUBSTR(t1.name, 1, INSTR(t1.name, ' ') - 1) = SUBSTR(t2.name, 1, INSTR(t2.name, ' ') - 1) -- fname match
+        AND SUBSTR(t1.name, INSTR(t1.name, ' ') + 1) = SUBSTR(t2.name, INSTR(t2.name, ' ') + 1) -- lname match
+    ), vemail);
+END;
