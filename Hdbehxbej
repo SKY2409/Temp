@@ -3,3 +3,15 @@ SET name = (SELECT t2.name FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA
 WHERE EXISTS (
     SELECT 1 FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '')
 );
+
+
+UPDATE table2 t2
+SET t2.email = (
+    SELECT t1.email
+    FROM table1 t1
+    WHERE REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '')
+)
+WHERE EXISTS (
+    SELECT 1 FROM table1 t1
+    WHERE REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '')
+);
