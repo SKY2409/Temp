@@ -1,0 +1,5 @@
+UPDATE table1 t1
+SET name = (SELECT t2.name FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', ''))
+WHERE EXISTS (
+    SELECT 1 FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '')
+);
