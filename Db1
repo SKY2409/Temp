@@ -3,3 +3,10 @@ SET name = (SELECT t2.name FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA
 WHERE EXISTS (
     SELECT 1 FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '')
 );
+
+
+
+SELECT * FROM table_name 
+WHERE REGEXP_LIKE(email_column, 
+  '^(?:"?[A-Za-z0-9.!#$%&''*+/=?^_`{|}~-]+"?|[A-Za-z0-9][A-Za-z0-9._%+-]*[A-Za-z0-9])@([A-Za-z0-9.-]+\.[A-Za-z]{2,})$'
+);
