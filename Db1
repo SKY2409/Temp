@@ -10,3 +10,13 @@ SELECT * FROM table_name
 WHERE REGEXP_LIKE(email_column, 
   '^(?:"?[A-Za-z0-9.!#$%&''*+/=?^_`{|}~-]+"?|[A-Za-z0-9][A-Za-z0-9._%+-]*[A-Za-z0-9])@([A-Za-z0-9.-]+\.[A-Za-z]{2,})$'
 );
+
+<asp:TextBox ID="txtEmail" runat="server" />
+<asp:RegularExpressionValidator 
+    ID="revEmail" 
+    ControlToValidate="txtEmail"
+    ErrorMessage="Please enter a valid email."
+    ValidationExpression="^(?:""?[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+""?|[A-Za-z0-9][A-Za-z0-9._%+-]*[A-Za-z0-9])@([A-Za-z0-9.-]+\.[A-Za-z]{2,})$"
+    runat="server" 
+    Display="Dynamic" 
+    ForeColor="Red" />
