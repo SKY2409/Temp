@@ -20,3 +20,27 @@ WHERE REGEXP_LIKE(email_column,
     runat="server" 
     Display="Dynamic" 
     ForeColor="Red" />
+
+DECLARE
+    CURSOR cur IS
+        SELECT year_value, date_value FROM my_table;
+    
+    v_year   NUMBER;
+    v_date   NUMBER;
+    v_june_30_date DATE;
+    v_date_converted DATE;
+BEGIN
+    FOR rec IN cur LOOP
+        v_year := rec.year_value;
+        v_date := rec.date_value;
+
+        v_date_converted := TO_DATE(v_date, 'YYYYMMDD');
+        v_june_30_date := TO_DATE(v_year || '0630', 'YYYYMMDD');
+
+        IF v_june_30_date BETWEEN v_date_converted - 365 AND v_date_converted + 365 THEN
+            DBMS_OUTPUT.PUT_LINE('Row with year ' || v_year || ' and date ' || v_date || ': Within ±1 year');
+        ELSE
+            DBMS_OUTPUT.PUT_LINE('Row with year ' || v_year || ' and date ' || v_date || ': Outside range');
+        END IF;
+    END LOOP;
+END;
