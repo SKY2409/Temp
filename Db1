@@ -44,3 +44,40 @@ BEGIN
         END IF;
     END LOOP;
 END;
+
+
+.......
+SELECT *
+FROM A
+JOIN B ON <join_condition>
+WHERE TO_DATE(B.date_col, 'YYYYMMDD') BETWEEN
+      TO_DATE(A.year_col || '0630', 'YYYYMMDD')
+      AND ADD_MONTHS(TO_DATE(A.year_col || '0630', 'YYYYMMDD'), 12) - 1;
+
+
+.....
+DECLARE
+    v_year_value    NUMBER;
+    v_raw_date      VARCHAR2(8);
+    v_date_value    DATE;
+    v_compare_date  DATE;
+BEGIN
+    -- Get the values from different tables (example: one record each)
+    SELECT year_col INTO v_year_value FROM A WHERE <your_condition>;
+    SELECT date_col INTO v_raw_date FROM B WHERE <your_condition>; -- assume CHAR or VARCHAR2
+
+    -- Convert date
+    v_date_value := TO_DATE(v_raw_date, 'YYYYMMDD');
+    
+    -- Construct June 30 of the year
+    v_compare_date := TO_DATE(v_year_value || '0630', 'YYYYMMDD');
+
+    -- Compare if v_date_value is in the 1-year range starting from June 30
+    IF v_date_value BETWEEN v_compare_date AND ADD_MONTHS(v_compare_date, 12) - 1 THEN
+        DBMS_OUTPUT.PUT_LINE('Date is within one year from June 30.');
+    ELSE
+        DBMS_OUTPUT.PUT_LINE('Date is outside the one-year range.');
+    END IF;
+END;
+
+
