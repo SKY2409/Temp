@@ -64,3 +64,18 @@ WHERE
         (AH.EMP_IND = 'R' AND EH.EMP_IND = 'C' AND AH.SERVICE_TYPE = '27' AND EH.RIW_LOCATION = 'RIW-ACT-RET')
     )
 ORDER BY AH.SYSCODE, AH.SEQ;
+
+Imports System.Security.Principal
+
+Dim identity As WindowsIdentity = WindowsIdentity.GetCurrent()
+Dim principal As New WindowsPrincipal(identity)
+
+For Each group As IdentityReference In identity.Groups
+    Try
+        Dim groupName As String = group.Translate(GetType(NTAccount)).ToString()
+        Console.WriteLine("Group: " & groupName)
+    Catch ex As Exception
+        Console.WriteLine("Unknown Group SID: " & group.Value)
+    End Try
+Next
+
