@@ -81,3 +81,31 @@ BEGIN
 END;
 
 
+' Determine the opposite profile type
+Dim otherProfileType As String = If(PrepVerif.myRecType = "V", "P", "V")
+
+' Query the comment from the other profile
+Dim otherComment As String = ""
+Dim conn As New OracleConnection("YOUR_CONNECTION_STRING") ' Adjust accordingly
+Dim cmd As New OracleCommand("SELECT txtComment FROM YourTable WHERE ProfileID = :id AND ProfileType = :type", conn)
+
+cmd.Parameters.Add(":id", OracleDbType.Int32).Value = PrepVerif.myProfileID ' Adjust this to match your profile's key
+cmd.Parameters.Add(":type", OracleDbType.Varchar2).Value = otherProfileType
+
+Try
+    conn.Open()
+    Dim reader As OracleDataReader = cmd.ExecuteReader()
+    If reader.Read() Then
+        otherComment = reader("txtComment").ToString()
+    End If
+    reader.Close()
+Catch ex As Exception
+    ' Log or handle error
+Finally
+    conn.Close()
+End Try
+
+' Example condition: only use other comment if current is empty and other has value
+If String.IsNullOrWhiteSpace(PrepVerif.txtComment) AndAlso Not String.IsNullOrWhiteSpace(otherComment) Then
+    PrepVerif.txtComment = otherComment
+End If
