@@ -1,0 +1,39 @@
+@page "/export"
+@inject BlazorOracleExport.Data.MyDataDao Dao
+@inject BlazorOracleExport.Services.ExcelService ExcelService
+
+<h3>Export Data to Excel</h3>
+
+<div class="form-group">
+    <label>Number ID:</label>
+    <input type="number" class="form-control" @bind="numberId" />
+</div>
+
+<div class="form-group mt-2">
+    <label>Month and Year:</label>
+    <input type="month" class="form-control" @bind="monthYearString" />
+</div>
+
+<button class="btn btn-primary mt-3" @onclick="ExportToExcel">Export</button>
+
+@if (downloadLink != null)
+{
+    <p><a href="@downloadLink" download="Export.xlsx">Download Excel File</a></p>
+}
+
+@code {
+    private int numberId;
+    private string monthYearString = DateTime.Now.ToString("yyyy-MM"); // Default to current month
+
+    private string? downloadLink;
+
+    private async Task ExportToExcel()
+    {
+        // You can parse the date here if needed:
+        var selectedDate = DateTime.ParseExact(monthYearString + "-01", "yyyy-MM-dd", null);
+
+        var data = await Dao.GetDataAsync(); // You can pass numberId and selectedDate to this later
+        var excelBytes = ExcelService.GenerateExcel(data);
+        downloadLink = $"data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{Convert.ToBase64String(excelBytes)}";
+    }
+}
