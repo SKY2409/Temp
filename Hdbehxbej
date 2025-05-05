@@ -278,3 +278,98 @@ css
     margin-right: 8px;
 }
 
+
+
+
+
+@using System.Linq
+@typeparam TItem
+
+<div class="multiselect-wrapper">
+    <div class="input-container" @onclick="ToggleDropdown">
+        @foreach (var item in SelectedItems)
+        {
+            <span class="tag">@GetItemName(item) <button @onclick="() => RemoveItem(item)">×</button></span>
+        }
+        <input placeholder="Select..." @bind="SearchTerm" @oninput="UpdateFilter" />
+        <span class="arrow">@((DropdownOpen) ? "▲" : "▼")</span>
+    </div>
+
+    @if (DropdownOpen)
+    {
+        <div class="dropdown-list">
+            <div class="select-all">
+                <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" /> Select all options
+            </div>
+
+            @foreach (var group in FilteredGroupedOptions)
+            {
+                <div class="group-label">@group.Key</div>
+                @foreach (var option in group)
+                {
+                    <label class="option-item">
+                        <input type="checkbox" checked="@IsSelected(option.Item)" @onchange="() => ToggleItem(option.Item)" />
+                        @option.Name
+                    </label>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public List<TItem> Options { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+    [Parameter] public List<TItem> SelectedItems { get; set; } = new();
+    [Parameter] public Func<TItem, string> GetGroup { get; set; }
+    [Parameter] public Func<TItem, string> GetName { get; set; }
+
+    private string SearchTerm = "";
+    private bool DropdownOpen = false;
+
+    private IEnumerable<IGrouping<string, (TItem Item, string Name)>> FilteredGroupedOptions =>
+        Options
+            .Where(x => IsSelected(x) || string.IsNullOrWhiteSpace(SearchTerm) || GetItemName(x).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .Select(x => (Item: x, Name: GetItemName(x)))
+            .GroupBy(x => GetGroup(x.Item));
+
+    private bool IsAllSelected =>
+        FilteredGroupedOptions.SelectMany(g => g).All(x => IsSelected(x.Item));
+
+    private void ToggleDropdown() => DropdownOpen = !DropdownOpen;
+
+    private bool IsSelected(TItem item) => SelectedItems.Contains(item);
+
+    private void ToggleItem(TItem item)
+    {
+        if (IsSelected(item))
+            SelectedItems.Remove(item);
+        else
+            SelectedItems.Add(item);
+
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        bool shouldSelect = (bool)e.Value;
+        foreach (var item in FilteredGroupedOptions.SelectMany(g => g).Select(g => g.Item))
+        {
+            if (shouldSelect && !SelectedItems.Contains(item))
+                SelectedItems.Add(item);
+            else if (!shouldSelect && SelectedItems.Contains(item))
+                SelectedItems.Remove(item);
+        }
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void RemoveItem(TItem item)
+    {
+        SelectedItems.Remove(item);
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void UpdateFilter(ChangeEventArgs e) => SearchTerm = e.Value?.ToString() ?? "";
+
+    private string GetItemName(TItem item) => GetName?.Invoke(item) ?? item?.ToString();
+}
