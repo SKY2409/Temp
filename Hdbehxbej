@@ -1,45 +1,89 @@
-UPDATE table1 t1
-SET name = (SELECT t2.name FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', ''))
-WHERE EXISTS (
-    SELECT 1 FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '')
-);
+@page "/multiselect"
 
+<h3>Select Technologies</h3>
 
-UPDATE table2 t2
-SET t2.email = (
-    SELECT t1.email
-    FROM table1 t1
-    WHERE REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '')
-)
-WHERE EXISTS (
-    SELECT 1 FROM table1 t1
-    WHERE REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '')
-);
+<!-- Search Input -->
+<input class="form-control mb-2" placeholder="Search..." @bind="SearchTerm" />
 
+<!-- Select All -->
+<div>
+    <label>
+        <input type="checkbox" @onclick="ToggleSelectAll" checked="@IsAllSelected" />
+        <strong>Select all options</strong>
+    </label>
+</div>
 
-DECLARE
-    vemail VARCHAR2(255);
-BEGIN
-    -- Example variable assignment (you can set this to the value you want to update)
-    vemail := 'newemail@example.com';
-    
-    UPDATE table1 t1
-    SET t1.email = vemail
-    WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(
-        (SELECT email FROM table2 t2 WHERE REGEXP_REPLACE(t1.email, '[^a-zA-Z0-9@.]', '') = REGEXP_REPLACE(t2.email, '[^a-zA-Z0-9@.]', '') AND
-        SUBSTR(t1.name, 1, INSTR(t1.name, ' ') - 1) = SUBSTR(t2.name, 1, INSTR(t2.name, ' ') - 1) -- fname match
-        AND SUBSTR(t1.name, INSTR(t1.name, ' ') + 1) = SUBSTR(t2.name, INSTR(t2.name, ' ') + 1) -- lname match
-    ), vemail);
-END;
+<!-- Grouped Options -->
+@foreach (var group in FilteredGroupedOptions)
+{
+    <div class="mt-2 text-muted fw-bold">@group.Key</div>
+    @foreach (var option in group)
+    {
+        <div>
+            <label>
+                <input type="checkbox" @bind="option.IsSelected" />
+                @option.Name
+            </label>
+        </div>
+    }
+}
 
+<!-- Selected Items -->
+@if (SelectedOptions.Any())
+{
+    <div class="mt-3 d-flex flex-wrap gap-2">
+        @foreach (var item in SelectedOptions)
+        {
+            <span class="badge bg-primary me-2">
+                @item.Name
+                <button class="btn-close btn-close-white btn-sm ms-2" @onclick="() => RemoveOption(item)"></button>
+            </span>
+        }
+    </div>
+}
 
-Function IsValidEmail(email As String) As Boolean
-    Try
-        Dim addr As New System.Net.Mail.MailAddress(email)
-        Return Regex.IsMatch(email, "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-    Catch
-        Return False
-    End Try
-End Function
+@code {
+    private string SearchTerm = "";
 
+    // Simulate options to be replaced by DB result later
+    private List<TechOption> Options = new()
+    {
+        new() { Name = "Angular", Group = "Frontend" },
+        new() { Name = "Bootstrap", Group = "Frontend" },
+        new() { Name = "React.js", Group = "Frontend" },
+        new() { Name = "Vue.js", Group = "Frontend" },
+        new() { Name = "Django", Group = "Backend" },
+        new() { Name = "Laravel", Group = "Backend" },
+        new() { Name = "Node.js", Group = "Backend" },
+    };
 
+    private IEnumerable<IGrouping<string, TechOption>> FilteredGroupedOptions =>
+        Options
+            .Where(o => string.IsNullOrWhiteSpace(SearchTerm) || o.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .GroupBy(o => o.Group);
+
+    private List<TechOption> SelectedOptions => Options.Where(o => o.IsSelected).ToList();
+
+    private bool IsAllSelected => FilteredGroupedOptions.SelectMany(g => g).All(o => o.IsSelected);
+
+    private void ToggleSelectAll()
+    {
+        bool newState = !IsAllSelected;
+        foreach (var option in FilteredGroupedOptions.SelectMany(g => g))
+        {
+            option.IsSelected = newState;
+        }
+    }
+
+    private void RemoveOption(TechOption option)
+    {
+        option.IsSelected = false;
+    }
+
+    private class TechOption
+    {
+        public string Name { get; set; }
+        public string Group { get; set; }
+        public bool IsSelected { get; set; }
+    }
+}
