@@ -1,0 +1,33 @@
+public class OptionService
+{
+    private readonly IConfiguration _config;
+
+    public OptionService(IConfiguration config)
+    {
+        _config = config;
+    }
+
+    public async Task<List<TechOptionDto>> GetOptionsAsync()
+    {
+        var options = new List<TechOptionDto>();
+        string connStr = _config.GetConnectionString("OracleDb");
+
+        using var conn = new OracleConnection(connStr);
+        await conn.OpenAsync();
+
+        string sql = "SELECT TECH_NAME, TECH_GROUP FROM TECH_OPTIONS";
+        using var cmd = new OracleCommand(sql, conn);
+        using var reader = await cmd.ExecuteReaderAsync();
+
+        while (await reader.ReadAsync())
+        {
+            options.Add(new TechOptionDto
+            {
+                Name = reader.GetString(0),
+                Group = reader.GetString(1)
+            });
+        }
+
+        return options;
+    }
+}
