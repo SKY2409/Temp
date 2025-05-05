@@ -109,3 +109,36 @@
         return GetGroup(item);
     }
 }
+
+
+
+
+
+
+<MultiSelectDropdown TItem="TechOption"
+                     Options="techList"
+                     @bind-SelectedItems="selectedTechs"
+                     GetName="@(x => x.Name)"
+                     GetGroup="@(x => x.Group)" />
+
+@code {
+    private List<TechOption> techList = new()
+    {
+        new() { Name = "Angular", Group = "Frontend" },
+        new() { Name = "Bootstrap", Group = "Frontend" },
+        new() { Name = "React.js", Group = "Frontend" },
+        new() { Name = "Vue.js", Group = "Frontend" },
+        new() { Name = "Django", Group = "Backend" },
+        new() { Name = "Laravel", Group = "Backend" },
+        new() { Name = "Node.js", Group = "Backend" },
+    };
+
+    private List<TechOption> selectedTechs = new();
+
+    public class TechOption
+    {
+        public string Name { get; set; }
+        public string Group { get; set; }
+    }
+}
+
