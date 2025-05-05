@@ -31,3 +31,40 @@ public class OptionService
         return options;
     }
 }
+
+
+
+
+WebApi/Controllers/OptionsController.cs]
+
+[ApiController]
+[Route("api/[controller]")]
+public class OptionsController : ControllerBase
+{
+    private readonly OptionService _optionService;
+
+    public OptionsController(OptionService optionService)
+    {
+        _optionService = optionService;
+    }
+
+    [HttpGet]
+    public async Task<ActionResult<List<TechOptionDto>>> Get()
+    {
+        return Ok(await _optionService.GetOptionsAsync());
+    }
+}
+
+
+
+
+[WebApi/Models/TechOptionDto.cs
+public class TechOptionDto
+{
+    public string Name { get; set; }
+    public string Group { get; set; }
+}
+
+
+WebApi/Program.cs
+builder.Services.AddScoped<OptionService>();
