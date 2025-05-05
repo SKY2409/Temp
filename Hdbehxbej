@@ -87,3 +87,194 @@
         public bool IsSelected { get; set; }
     }
 }
+
+
+
+
+
+
+
+
+-------------------------
+
+
+@page "/multiselect"
+@using System.Linq
+
+<div class="multiselect-wrapper">
+    <div class="input-container" @onclick="ToggleDropdown">
+        @foreach (var item in SelectedOptions)
+        {
+            <span class="tag">@item.Name <button @onclick="() => RemoveOption(item)">×</button></span>
+        }
+        <input placeholder="Select..." @bind="SearchTerm" @oninput="UpdateFilter" />
+        <span class="arrow">@((DropdownOpen) ? "▲" : "▼")</span>
+    </div>
+
+    @if (DropdownOpen)
+    {
+        <div class="dropdown-list">
+            <div class="select-all">
+                <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" /> Select all options
+            </div>
+
+            @foreach (var group in FilteredGroupedOptions)
+            {
+                <div class="group-label">@group.Key</div>
+                @foreach (var option in group)
+                {
+                    <label class="option-item">
+                        <input type="checkbox" @bind="option.IsSelected" />
+                        @option.Name
+                    </label>
+                }
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private bool DropdownOpen = false;
+    private string SearchTerm = "";
+
+    private List<TechOption> Options = new()
+    {
+        new() { Name = "Angular", Group = "Frontend" },
+        new() { Name = "Bootstrap", Group = "Frontend" },
+        new() { Name = "React.js", Group = "Frontend" },
+        new() { Name = "Vue.js", Group = "Frontend" },
+        new() { Name = "Django", Group = "Backend" },
+        new() { Name = "Laravel", Group = "Backend" },
+        new() { Name = "Node.js", Group = "Backend" }
+    };
+
+    private IEnumerable<IGrouping<string, TechOption>> FilteredGroupedOptions =>
+        Options
+        .Where(o => o.IsSelected || string.IsNullOrWhiteSpace(SearchTerm) || o.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+        .GroupBy(o => o.Group);
+
+    private List<TechOption> SelectedOptions => Options.Where(o => o.IsSelected).ToList();
+
+    private bool IsAllSelected => FilteredGroupedOptions.SelectMany(g => g).All(o => o.IsSelected);
+
+    private void ToggleDropdown() => DropdownOpen = !DropdownOpen;
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        bool shouldSelect = (bool)e.Value;
+        foreach (var opt in FilteredGroupedOptions.SelectMany(g => g))
+            opt.IsSelected = shouldSelect;
+    }
+
+    private void RemoveOption(TechOption option) => option.IsSelected = false;
+
+    private void UpdateFilter(ChangeEventArgs e) => SearchTerm = e.Value?.ToString() ?? "";
+
+    private class TechOption
+    {
+        public string Name { get; set; }
+        public string Group { get; set; }
+        public bool IsSelected { get; set; }
+    }
+}
+
+
+
+
+
+
+css
+
+
+
+
+.multiselect-wrapper {
+    position: relative;
+    width: 400px;
+    color: #fff;
+    font-family: sans-serif;
+}
+
+.input-container {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid #5b5b5b;
+    border-radius: 6px;
+    background: #1e1e2f;
+    padding: 8px;
+    cursor: pointer;
+    gap: 6px;
+    align-items: center;
+    position: relative;
+}
+
+.input-container input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    color: white;
+    padding: 4px;
+    outline: none;
+}
+
+.input-container .arrow {
+    color: #aaa;
+    margin-left: auto;
+}
+
+.tag {
+    background-color: #3b82f6;
+    padding: 3px 8px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    font-size: 0.85rem;
+}
+
+.tag button {
+    background: none;
+    border: none;
+    color: white;
+    margin-left: 5px;
+    cursor: pointer;
+}
+
+.dropdown-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #1e1e2f;
+    border: 1px solid #5b5b5b;
+    border-radius: 6px;
+    max-height: 300px;
+    overflow-y: auto;
+    z-index: 10;
+    margin-top: 4px;
+    padding: 8px;
+}
+
+.select-all {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.group-label {
+    font-size: 0.75rem;
+    color: #a0aec0;
+    text-transform: uppercase;
+    margin-top: 12px;
+    margin-bottom: 4px;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 6px;
+    cursor: pointer;
+}
+
+.option-item input {
+    margin-right: 8px;
+}
+
