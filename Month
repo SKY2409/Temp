@@ -104,3 +104,72 @@
     }
 }
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<select @bind="SelectedMonth" class="form-select" @onchange="EmitSelection">
+    @foreach (var month in Enumerable.Range(1, DateTime.Now.Month))
+    {
+        <option value="@month">@MonthName(month)</option>
+    }
+</select>
+
+@* Optional Year dropdown (if needed) *@
+<select disabled class="form-select mt-2">
+    <option>@CurrentYear</option>
+</select>
+
+@code {
+    [Parameter] public int SelectedMonth { get; set; } = DateTime.Now.Month;
+    [Parameter] public EventCallback<int> SelectedMonthChanged { get; set; }
+
+    private int CurrentYear = DateTime.Now.Year;
+
+    private async Task EmitSelection(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out var month))
+        {
+            SelectedMonth = month;
+            await SelectedMonthChanged.InvokeAsync(month);
+        }
+    }
+
+    private string MonthName(int month)
+    {
+        return CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames[month - 1];
+    }
+}
+
+
+
+
+
+<MonthPickerDropdown @bind-SelectedMonth="selectedMonth" />
+
+<p>You selected: @CultureInfo.CurrentCulture.DateTimeFormat.GetMonthName(selectedMonth)</p>
+
+@code {
+    private int selectedMonth = DateTime.Now.Month;
+}
+
+
+
+
+
+
+.form-select {
+    width: 200px;
+    padding: 8px;
+    border-radius: 6px;
+}
