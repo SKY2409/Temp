@@ -1,15 +1,29 @@
+@page "/"
+@using YourApp.Shared
 
-Imports System.Security.Principal
+<MultiSelectDropdown TItem="TechOption"
+                     Options="techList"
+                     @bind-SelectedItems="selectedTechs"
+                     GetName="@(x => x.Name)"
+                     GetGroup="@(x => x.Group)" />
 
-Dim identity As WindowsIdentity = WindowsIdentity.GetCurrent()
-Dim principal As New WindowsPrincipal(identity)
+@code {
+    private List<TechOption> techList = new()
+    {
+        new() { Name = "Angular", Group = "Frontend" },
+        new() { Name = "Bootstrap", Group = "Frontend" },
+        new() { Name = "React.js", Group = "Frontend" },
+        new() { Name = "Vue.js", Group = "Frontend" },
+        new() { Name = "Django", Group = "Backend" },
+        new() { Name = "Laravel", Group = "Backend" },
+        new() { Name = "Node.js", Group = "Backend" },
+    };
 
-For Each group As IdentityReference In identity.Groups
-    Try
-        Dim groupName As String = group.Translate(GetType(NTAccount)).ToString()
-        Console.WriteLine("Group: " & groupName)
-    Catch ex As Exception
-        Console.WriteLine("Unknown Group SID: " & group.Value)
-    End Try
-Next
+    private List<TechOption> selectedTechs = new();
 
+    public class TechOption
+    {
+        public string Name { get; set; }
+        public string Group { get; set; }
+    }
+}
