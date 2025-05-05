@@ -1,14 +1,138 @@
-Subject: Clarification on Tax Deductions and H-1B Filing
+@typeparam TItem
 
-Dear [HR Representative’s Name],
+<div class="multiselect-wrapper">
+    <div class="input-container" @onclick="ToggleDropdown">
+        @if (IsAllOptionsSelected())
+        {
+            <span class="tag">
+                All selected (@SelectedItems.Count)
+                <button @onclick="ClearAll" class="ms-2">×</button>
+            </span>
+        }
+        else
+        {
+            @foreach (var item in SelectedItems)
+            {
+                <span class="tag">
+                    @GetItemName(item)
+                    <button @onclick="(e) => RemoveItem(item)">×</button>
+                </span>
+            }
+        }
 
-I hope you are doing well. I have a couple of questions regarding my current employment and future visa status, and I would appreciate your guidance.
-	1.	Medicare and Social Security Taxes – As per IRS guidelines, F-1 visa holders on OPT are typically exempt from Medicare and Social Security (FICA) taxes. I noticed these deductions on my paycheck and wanted to check if this was applied correctly to my status. Could you confirm if these withholdings are necessary in my case?
-	2.	H-1B Filing – I understand that my employment is subject to a probationary period. Would this affect my eligibility for H-1B sponsorship through the lottery? Since I only have three chances before my F-1 OPT expires, I wanted to confirm if the company is planning to file for my H-1B this year.
+        <input placeholder="Select..." @bind="SearchTerm" @oninput="UpdateFilter" />
+        <span class="arrow">@((DropdownOpen) ? "▲" : "▼")</span>
+    </div>
 
-I appreciate your time and assistance in clarifying these concerns. Please let me know if you need any additional information from my end.
+    @if (DropdownOpen)
+    {
+        <div class="dropdown-list">
+            <div class="select-all">
+                <input type="checkbox" @onchange="ToggleSelectAll" checked="@IsAllSelected" /> Select all options
+            </div>
 
-Looking forward to your response.
+            @foreach (var group in FilteredGroupedOptions)
+            {
+                <div class="group-label">@group.Key</div>
+                @foreach (var option in group)
+                {
+                    <label class="option-item">
+                        <input type="checkbox" checked="@IsSelected(option.Item)" @onchange="() => ToggleItem(option.Item)" />
+                        @option.Name
+                    </label>
+                }
+            }
+        </div>
+    }
+</div>
 
-Best regards,
-Sai Krishna Yalamanchili
+@code {
+    [Parameter] public List<TItem> Options { get; set; } = new();
+    [Parameter] public List<TItem> SelectedItems { get; set; } = new();
+    [Parameter] public EventCallback<List<TItem>> SelectedItemsChanged { get; set; }
+
+    [Parameter] public Func<TItem, string>? GetGroup { get; set; }
+    [Parameter] public Func<TItem, string>? GetName { get; set; }
+
+    private string SearchTerm = "";
+    private bool DropdownOpen = false;
+
+    private IEnumerable<IGrouping<string, (TItem Item, string Name)>> FilteredGroupedOptions =>
+        Options
+            .Where(x => IsSelected(x) || string.IsNullOrWhiteSpace(SearchTerm) || GetItemName(x).Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
+            .Select(x => (Item: x, Name: GetItemName(x)))
+            .GroupBy(x => GetGroupName(x.Item));
+
+    private bool IsAllSelected =>
+        FilteredGroupedOptions.SelectMany(g => g).All(x => IsSelected(x.Item));
+
+    private bool IsAllOptionsSelected()
+    {
+        return Options != null &&
+               Options.Any() &&
+               SelectedItems.Count == Options.Count;
+    }
+
+    private void ToggleDropdown() => DropdownOpen = !DropdownOpen;
+
+    private bool IsSelected(TItem item) => SelectedItems.Contains(item);
+
+    private void ToggleItem(TItem item)
+    {
+        if (IsSelected(item))
+            SelectedItems.Remove(item);
+        else
+            SelectedItems.Add(item);
+
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void ToggleSelectAll(ChangeEventArgs e)
+    {
+        bool shouldSelect = (bool)e.Value;
+        foreach (var item in FilteredGroupedOptions.SelectMany(g => g).Select(x => x.Item))
+        {
+            if (shouldSelect && !SelectedItems.Contains(item))
+                SelectedItems.Add(item);
+            else if (!shouldSelect && SelectedItems.Contains(item))
+                SelectedItems.Remove(item);
+        }
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void RemoveItem(TItem item)
+    {
+        SelectedItems.Remove(item);
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void ClearAll()
+    {
+        SelectedItems.Clear();
+        SelectedItemsChanged.InvokeAsync(SelectedItems);
+    }
+
+    private void UpdateFilter(ChangeEventArgs e) => SearchTerm = e.Value?.ToString() ?? "";
+
+    private string GetItemName(TItem item)
+    {
+        if (item == null)
+            return string.Empty;
+
+        if (GetName == null)
+            throw new InvalidOperationException("GetName delegate must be provided.");
+
+        return GetName(item);
+    }
+
+    private string GetGroupName(TItem item)
+    {
+        if (item == null)
+            return "Ungrouped";
+
+        if (GetGroup == null)
+            throw new InvalidOperationException("GetGroup delegate must be provided.");
+
+        return GetGroup(item);
+    }
+}
