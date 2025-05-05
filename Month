@@ -1,0 +1,106 @@
+<div class="month-picker">
+    <div class="header">
+        <button @onclick="PreviousYear">‹</button>
+        <span class="year">@CurrentYear</span>
+        <button @onclick="NextYear">›</button>
+    </div>
+
+    <div class="months-grid">
+        @foreach (var month in Enumerable.Range(1, 12))
+        {
+            <button class="month-btn @(IsSelected(month) ? "selected" : "")"
+                    @onclick="() => SelectMonth(month)">
+                @MonthName(month)
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int SelectedMonth { get; set; } = DateTime.Now.Month;
+    [Parameter] public int SelectedYear { get; set; } = DateTime.Now.Year;
+    [Parameter] public EventCallback<(int Month, int Year)> OnMonthSelected { get; set; }
+
+    private int CurrentYear { get; set; }
+
+    protected override void OnInitialized()
+    {
+        CurrentYear = SelectedYear;
+    }
+
+    private void PreviousYear() => CurrentYear--;
+    private void NextYear() => CurrentYear++;
+
+    private void SelectMonth(int month)
+    {
+        SelectedMonth = month;
+        SelectedYear = CurrentYear;
+        OnMonthSelected.InvokeAsync((SelectedMonth, SelectedYear));
+    }
+
+    private string MonthName(int month) => CultureInfo.CurrentCulture.DateTimeFormat.AbbreviatedMonthNames[month - 1];
+
+    private bool IsSelected(int month) => month == SelectedMonth && CurrentYear == SelectedYear;
+}
+
+
+
+
+.month-picker {
+    width: 200px;
+    text-align: center;
+    font-family: sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.months-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.month-btn {
+    padding: 8px;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background 0.2s;
+}
+
+.month-btn:hover {
+    background-color: #eeeeee33;
+}
+
+.month-btn.selected {
+    background: linear-gradient(to bottom, #006eff, #004fcf);
+    color: white;
+}
+
+
+
+<MonthPicker SelectedMonth="selectedMonth"
+             SelectedYear="selectedYear"
+             OnMonthSelected="HandleMonthSelected" />
+
+<p>Selected: @selectedMonth/@selectedYear</p>
+
+@code {
+    private int selectedMonth = 5;
+    private int selectedYear = 2020;
+
+    private void HandleMonthSelected((int Month, int Year) selection)
+    {
+        selectedMonth = selection.Month;
+        selectedYear = selection.Year;
+    }
+}
+
