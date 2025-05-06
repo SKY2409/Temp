@@ -173,3 +173,138 @@
     padding: 8px;
     border-radius: 6px;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="month-picker">
+    <div class="month-picker-header">
+        <button @onclick="PreviousYear">«</button>
+        <span>@DisplayYear</span>
+        <button @onclick="NextYear">»</button>
+    </div>
+
+    <div class="month-grid">
+        @foreach (var month in MonthList)
+        {
+            <button class="@GetMonthClass(month)" @onclick="() => SelectMonth(month)">
+                @month.ToString("MMM")
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public DateTime SelectedMonth { get; set; } = DateTime.Now;
+
+    [Parameter]
+    public EventCallback<DateTime> SelectedMonthChanged { get; set; }
+
+    private int DisplayYear { get; set; }
+    private List<DateTime> MonthList { get; set; } = new();
+
+    protected override void OnInitialized()
+    {
+        DisplayYear = SelectedMonth.Year;
+        BuildMonthGrid();
+    }
+
+    private void BuildMonthGrid()
+    {
+        MonthList = Enumerable.Range(1, 12)
+            .Select(m => new DateTime(DisplayYear, m, 1))
+            .ToList();
+    }
+
+    private void PreviousYear()
+    {
+        DisplayYear--;
+        BuildMonthGrid();
+    }
+
+    private void NextYear()
+    {
+        DisplayYear++;
+        BuildMonthGrid();
+    }
+
+    private async Task SelectMonth(DateTime month)
+    {
+        SelectedMonth = month;
+        await SelectedMonthChanged.InvokeAsync(month);
+    }
+
+    private string GetMonthClass(DateTime month)
+    {
+        return month.Month == SelectedMonth.Month && month.Year == SelectedMonth.Year
+            ? "month-button selected"
+            : "month-button";
+    }
+}
+
+
+
+
+----------------
+
+.month-picker {
+    max-width: 400px;
+    margin: 1rem auto;
+    background: #1e1e2f;
+    color: white;
+    padding: 1rem;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.3);
+}
+
+.month-picker-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    font-size: 1.2rem;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+}
+
+.month-button {
+    padding: 10px;
+    background: transparent;
+    border: 1px solid #3b82f6;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.month-button.selected {
+    background: #3b82f6;
+    color: white;
+}
+
